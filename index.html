@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>я SPA</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 10px;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+
+    .square {
+      width: 50px;
+      height: 50px;
+      border: 2px solid black;
+      border-radius: 10px;
+      text-align: center;
+      line-height: 50px;
+      margin: 5px;
+      display: inline-block;
+    }
+
+    .square:hover {
+      transform: scale(0.8);
+    }
+
+    .scroll-container {
+      height: 100vh;
+      width: 100vw;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+  </style>
+</head>
+
+<body>
+
+  <main class="scroll-container" id="scroll-container">
+    <div id="vertical-list"></div>
+  </main>
+
+  <script>
+
+    let LOADED_LINES = 20;//начальное кол-во объектов списка
+    const observer = new IntersectionObserver(updateVisibleNumbers, { threshold: 0.5 });
+
+
+    // генерация чисел от min до max
+    const getRandomNumber = (min, max) => {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    // создание горизонтального списка
+    const createHorizontalRow = (count) => {
+      let html = '';
+      for (let i = 0; i < count; i++) {
+        html += `<div class="square">${getRandomNumber(1, 100)}</div>`;
+      }
+      return html;
+    }
+
+    // создание вертикального списка
+    const createVerticalList = (count) => {
+      let html = '';
+      const extra_count = LOADED_LINES > 10 ? LOADED_LINES - count : 0
+      for (let i = 0; i < count; i++) {
+        const horizontal_item_count = Math.floor(Math.random() * 10) + 10; // рандомное количество элементов в горизонтальном списке
+        html += `<div class="vertical-item"><h3>foo ${i + 1 + extra_count}</h3>${createHorizontalRow(horizontal_item_count)}</div>`;
+      }
+      return html;
+    }
+
+    // добавляем вертикальные списки на страницу
+    const renderVerticalLists = (count) => {
+      const vertical_list_container = document.getElementById('vertical-list');
+      vertical_list_container.innerHTML = createVerticalList(count);
+      document.querySelectorAll('.vertical-item').forEach(list => observer.observe(list));
+    }
+
+    //обновляем числа в vertical-item которые в видимости
+    function updateVisibleNumbers(entries) {
+      entries.forEach(entry => {
+        const list = entry.target;
+        const squares = list.querySelectorAll('.square')
+        if (entry.isIntersecting) {
+          squares.forEach((q) => {
+            q.textContent = getRandomNumber(1, 100);
+            q.intervalId = setInterval(() => q.textContent = getRandomNumber(1, 100), 1000);
+          })
+
+        } else {
+          squares.forEach((q) => {
+            clearInterval(q.intervalId);
+          })
+        }
+      });
+    }
+
+    const loadMoreLists = () => {
+      const vertical_list_container = document.getElementById('vertical-list');
+      LOADED_LINES += 10;//обновляем до создания новых списков т.к. createVerticalList берет в расчет эту переменную
+      vertical_list_container.innerHTML += createVerticalList(10); // загружаем следующие 10 строк
+      const newLists = document.querySelectorAll('.vertical-item');
+      newLists.forEach(list => observer.observe(list));
+    };
+
+    // обраобтчик scroll
+    const handleScroll = () => {
+      if (scrollContainer.scrollTop + scrollContainer.clientHeight >= scrollContainer.scrollHeight - 30) {
+        loadMoreLists();
+      }
+    };
+
+    // Инициализация
+    renderVerticalLists(LOADED_LINES);
+
+    const scrollContainer = document.getElementById('scroll-container');
+    scrollContainer.addEventListener('scroll', handleScroll);
+  </script>
+
+</body>
+
+</html>
